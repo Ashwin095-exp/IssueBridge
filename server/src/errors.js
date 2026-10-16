@@ -4,7 +4,7 @@ export const ERROR_TABLE = {
   INPUT_TOO_LONG: { status: 413, message: "That's too long; trim it to the main description." },
   RATE_LIMITED: { status: 429, message: 'The model is busy or the quota is used up. Try again in a minute.' },
   UPSTREAM_TIMEOUT: { status: 504, message: 'The model took too long. Please retry.' },
-  UPSTREAM_ERROR: { status: 502, message: "Couldn't reach the model. Please retry." },
+  UPSTREAM_ERROR: { status: 502, message: 'The model provider encountered an error. Please retry.' },
   BAD_MODEL_OUTPUT: { status: 502, message: "The model's answer was malformed. Please retry." },
   SERVER_MISCONFIGURED: { status: 500, message: 'Server setup problem. Check the server log.' },
 };

@@ -4,6 +4,15 @@ Legend: **[VERIFIED] / [ASSUMPTION] / [DECISION] / [CONFIRM]**. Order follows `R
 
 **How to use:** do one task at a time. Verify it. Commit. Update `RESUME.md` (checklist at its bottom). Never ask an AI assistant to build more than the current task. Do not paste this whole file into a prompt; paste only the current task plus the relevant contract section.
 
+## Latest execution status — 17 Oct 2026
+
+- T01/T03: verified `gemma-4-26b-a4b-it` REST and SDK calls; `gemma-4-31b-it` returned HTTP 500.
+- T04: minimal/high thinking and JSON response mode succeeded, but live issue/sample reliability is intermittent (see `docs/verification-log.md`).
+- T11: a real issue succeeded through `/api/analyze` and the browser rendered a real Gemma result; the latest separate run of all three Markdown samples received upstream HTTP 500 for each. Keep the sample-reliability acceptance item open.
+- T12: backend unit/route tests, short-input API error, offline UI state, preserved input, and a successful retry were verified. Prompt injection, non-English output, and bad-key behavior remain unverified live.
+- T14: README updated with Windows setup and observed results. The uncommitted `.env.example` value was cleared; committed `HEAD` contains placeholder text, not a token-shaped key. T15 still needs final secret-scan review and a fresh-clone verification. Do not publish any credential from the prior working copy; revoke it if it was valid.
+- Continue from `docs/planning/RESUME.md` §10; do not create or push a GitHub repository without owner approval.
+
 Common definition-of-done for every task (in addition to the task's own): acceptance criteria met, verification performed, no secrets staged (`git status` / `git diff --staged`), committed with a clear message, `RESUME.md` updated.
 
 ---

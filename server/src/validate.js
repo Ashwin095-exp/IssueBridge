@@ -53,7 +53,7 @@ export function parseModelOutput(raw) {
     .map((s) => (typeof s === 'string' ? { name: s.trim(), why: '' } : { name: str(s?.name), why: str(s?.why) }))
     .filter((s) => s.name)
     .slice(0, 6);
-  if (skills.length < 1) throw bad();
+  if (skills.length < 2) throw bad();
 
   const d = obj.difficulty;
   const level = str(d?.level).toLowerCase();

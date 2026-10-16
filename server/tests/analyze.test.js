@@ -5,7 +5,7 @@ import { AppError } from '../src/errors.js';
 
 const goodJson = JSON.stringify({
   summary: 'Fix a typo.',
-  skills: [{ name: 'Markdown', why: 'x' }],
+  skills: [{ name: 'Markdown', why: 'x' }, { name: 'Git', why: 'y' }],
   difficulty: { level: 'beginner', confidence: 'high', reasoning: 'Small.' },
   steps: [1, 2, 3, 4].map((n) => ({ title: `S${n}`, detail: `D${n}` })),
   caveats: [],
@@ -79,3 +79,44 @@ test('upstream errors map to envelope, no raw text leaked', async () => {
     assert.equal(j.error.code, 'UPSTREAM_ERROR'); assert.ok(!JSON.stringify(j).includes('secret upstream'));
   });
 });
+
+test('regression: custom CLI crash issue processes successfully through analyze pipeline', async () => {
+  const CUSTOM_ISSUE = `Title: CLI crashes when the output directory does not exist
+
+Description:
+When I export data to a directory that does not exist, the command crashes with a FileNotFoundError instead of creating the directory or showing a helpful error message.
+
+Steps to reproduce:
+1. Run \`python -m datatool export --format csv --output ./reports/2026/results.csv\`.
+2. Ensure the \`reports/2026\` directory does not exist.
+3. Observe that the command crashes.
+
+Expected behavior:
+- Create missing parent directories automatically, or
+- Return a clear error explaining that the output directory does not exist.
+
+Actual behavior:
+The command raises FileNotFoundError and exits with a non-zero status.
+
+Environment: Python 3.11, Ubuntu 22.04, datatool 0.8.3.
+
+Additional requirements:
+- Add a regression test for nested output directories.
+- Preserve existing CSV export behavior.
+- Avoid changing other export formats.`;
+
+  let receivedUserContent = '';
+  await withServer(async (userContent) => {
+    receivedUserContent = userContent;
+    return { text: goodJson, model: 'gemma-4-26b-a4b-it' };
+  }, {}, async (base) => {
+    const r = await post(base, { issueText: CUSTOM_ISSUE });
+    const j = await r.json();
+    assert.equal(r.status, 200);
+    assert.equal(j.ok, true);
+    assert.equal(j.meta.model, 'gemma-4-26b-a4b-it');
+    assert.ok(receivedUserContent.includes('CLI crashes when the output directory does not exist'));
+    assert.ok(receivedUserContent.includes('Add a regression test for nested output directories.'));
+  });
+});
+

@@ -53,6 +53,7 @@ test('parseModelOutput: bad outputs -> BAD_MODEL_OUTPUT', () => {
     '', 'not json at all', '[1,2,3]', '{"summary":',
     JSON.stringify({ ...good, summary: '' }),
     JSON.stringify({ ...good, skills: [] }),
+    JSON.stringify({ ...good, skills: good.skills.slice(0, 1) }),
     JSON.stringify({ ...good, difficulty: { level: 'impossible', confidence: 'high', reasoning: 'x' } }),
     JSON.stringify({ ...good, difficulty: { level: 'beginner', confidence: 'certain', reasoning: 'x' } }),
     JSON.stringify({ ...good, steps: good.steps.slice(0, 3) }),

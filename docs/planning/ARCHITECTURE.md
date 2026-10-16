@@ -8,8 +8,8 @@ Legend: **[VERIFIED] / [ASSUMPTION] / [DECISION] / [CONFIRM]**. Scope in `PRD.md
 |---|---|---|
 | Frontend | React + Vite, plain CSS | Fastest scaffold; no CSS framework to debug |
 | Backend | Node.js + Express (single process) | Keeps API key server-side; trivial |
-| Model | **Gemma 4 via Gemini API**, ID from `GEMMA_MODEL` (candidates `gemma-4-26b-a4b-it`, `gemma-4-31b-it`; both [VERIFIED] as listed in official docs; working ID confirmed only after T01) | Satisfies both challenges |
-| SDK | `@google/genai` (JavaScript) [VERIFIED as shown in official docs; exact version recorded in T03] | Official SDK |
+| Model | **Gemma 4 via Gemini API**, `GEMMA_MODEL` defaults to `gemma-4-26b-a4b-it` (REST and SDK succeeded; `gemma-4-31b-it` returned HTTP 500 in the local verification) | Satisfies both challenges |
+| SDK | `@google/genai` 2.30.0 (JavaScript), verified through a live call | Official SDK |
 | Persistence | None | No need for MVP |
 | Tests | Node built-in test runner for server logic; manual checklist for UI | No extra tooling |
 | Repo layout | Two independent npm projects (`server/`, `client/`) | Avoids workspace config |
@@ -38,8 +38,8 @@ JSON response {ok, data, meta}  →  React renders sections
 1. User submits; client checks length (UX only).
 2. `POST /api/analyze` with JSON `{ "issueText": "<string>" }`.
 3. Server validates type and length (authoritative).
-4. Server builds the call: fixed system instruction + issue text as user content; thinking level and JSON options per T04 results.
-5. Server awaits the model with a timeout.
+4. Server builds the call: fixed system instruction + issue text as user content; `THINKING_LEVEL=minimal` and `JSON_MODE=true` are the verified defaults.
+5. Server awaits the model with a 90-second per-call timeout.
 6. Server extracts JSON from the model text (tolerating code fences/extra prose), validates against the schema, trims/normalises (e.g., clamp steps to 8, drop empty items).
 7. On invalid output: one retry (decided in T07); then `BAD_MODEL_OUTPUT`.
 8. Respond with `ok:true` + `data` + `meta`.
@@ -89,9 +89,10 @@ The schema is a [DECISION]; the field names are frozen once T05 is done, because
 
 ## 5. Model integration notes
 
-- **[VERIFIED]** Official docs list `systemInstruction` and `thinkingConfig.thinkingLevel` (`"high"` enables, `"minimal"` disables) for Gemma 4 through the Gemini API.
-- **[ASSUMPTION]** Whether a JSON response mode/schema is honoured by Gemma 4 on this API. Not shown on the official page fetched. T04 decides; the parser/validator is mandatory either way.
-- **[ASSUMPTION]** Whether response parts include "thought" content that must be filtered before parsing. Inspect the raw response structure in T03/T04.
+- **[VERIFIED]** `gemma-4-26b-a4b-it` returned HTTP 200 through REST and the JavaScript SDK. The alternative `gemma-4-31b-it` returned HTTP 500; do not use it as the default.
+- **[VERIFIED]** SDK calls with `thinkingLevel=minimal`, `thinkingLevel=high`, and `responseMimeType=application/json` succeeded. The application defaults to minimal thinking and JSON response mode; server-side parsing and schema validation remain mandatory.
+- **[VERIFIED]** REST responses can include thought parts; `server/src/services/gemma.js` filters them before parsing the answer text.
+- **[KNOWN LIMITATION]** Live issue analysis can still receive intermittent upstream HTTP 500 errors, including while testing the bundled samples. The client exposes Retry.
 - **[CONFIRM]** Official docs show a "deprecated, see gemma.ai" banner; re-check the current docs location at the event.
 - Do not copy Gemini-model IDs, Gemini-only features, or `gemini-*` examples into this project.
 
@@ -99,13 +100,14 @@ The schema is a [DECISION]; the field names are frozen once T05 is done, because
 
 | Name | Where | Required | Default | Notes |
 |---|---|---|---|---|
-| `GEMINI_API_KEY` | `server/.env` | Yes | — | From Google AI Studio. Never committed. SDK auto-read behaviour [ASSUMPTION]; else pass explicitly |
-| `GEMMA_MODEL` | `server/.env` | Yes | set after T01 (candidate `gemma-4-26b-a4b-it`) | Exact ID is printed in README |
+| `GEMINI_API_KEY` | `server/.env` | Yes | — | From Google AI Studio. Passed explicitly to `GoogleGenAI`; never committed |
+| `GEMMA_MODEL` | `server/.env` | No | `gemma-4-26b-a4b-it` | Verified model; exact ID is printed in README |
 | `PORT` | `server/.env` | No | `3001` | |
 | `CORS_ORIGIN` | `server/.env` | No | `http://localhost:5173` | Add deploy origin if O2 |
 | `MAX_INPUT_CHARS` | `server/.env` | No | `8000` | |
-| `MODEL_TIMEOUT_MS` | `server/.env` | No | `30000` | [ASSUMPTION], tune from T04 latency |
-| `THINKING_LEVEL` | `server/.env` | No | decided in T04 (`high`/`minimal`) | |
+| `MODEL_TIMEOUT_MS` | `server/.env` | No | `90000` | Increased after an actual issue request exceeded the previous 30-second limit |
+| `THINKING_LEVEL` | `server/.env` | No | `minimal` | Verified with the selected model |
+| `JSON_MODE` | `server/.env` | No | `true` | Sends `responseMimeType=application/json`; verified with the selected model |
 | `VITE_API_BASE_URL` | `client/.env` | No | empty → use Vite dev proxy | Never put secrets in `VITE_*` |
 
 `server/.env.example` lists names with placeholder values only.
@@ -124,11 +126,11 @@ The schema is a [DECISION]; the field names are frozen once T05 is done, because
 - One central error-mapping function converts upstream/validation failures to the codes above.
 - Server never leaks stack traces or upstream raw errors to the client.
 - Client treats any non-`ok:true` or network failure as an error state, keeps the textarea content, offers Retry.
-- Timeouts enforced server-side; client also has a generous abort so the UI cannot hang indefinitely.
+- A 90-second timeout is enforced for each server model call; the client allows 190 seconds for the request and one malformed-output retry.
 
 ## 9. Minimal project structure
 
-Repository (public) — created during the event:
+Repository working tree (not yet published to GitHub):
 
 ```
 issuebridge/
@@ -148,23 +150,22 @@ issuebridge/
 │   │   ├── prompt.js         # System instruction + user-content builder
 │   │   ├── validate.js       # Input validation + model-output parsing/validation
 │   │   └── errors.js         # Error codes → HTTP status + messages
-│   ├── scripts/smoke.js      # One-off SDK call check (T03); kept or deleted
+│   ├── scripts/verify.js     # Live REST/SDK and sample verification
 │   └── tests/                # node --test files for validate/errors/route (mocked model)
 └── client/
     ├── package.json
     ├── index.html
     ├── vite.config.js        # dev proxy /api → http://localhost:3001
-    ├── .env.example          # optional VITE_API_BASE_URL
     └── src/
         ├── main.jsx          # Mount
         ├── App.jsx           # Page state machine: idle/loading/error/success
         ├── api.js            # fetch wrapper for /api/analyze
         ├── components/       # IssueForm, ResultView (sections), ErrorBanner
-        ├── mock/sampleResult.json  # Fixture matching the contract, for UI work before integration
+        ├── samples.js        # Built-in issue examples
         └── styles.css        # Single stylesheet
 ```
 
-Environment-variable locations: `server/.env` (secrets), `client/.env` (non-secret, optional). Tests: `server/tests/`; UI verified manually via checklist in `TASKS.md` T12. GitHub repo files: `README.md`, `LICENSE`, `.gitignore`, `.env.example` files, `samples/`, `docs/planning/`.
+Environment-variable location: `server/.env` (secret, ignored by Git); the client uses the Vite `/api` proxy by default. Tests: `server/tests/`; the live browser flow was checked manually. No public GitHub repository or automated browser-test suite has been created.
 
 ## 10. Local development and deployment
 

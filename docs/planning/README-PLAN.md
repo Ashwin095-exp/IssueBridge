@@ -1,6 +1,6 @@
 # README-PLAN — What the final repo README must contain
 
-Legend: **[VERIFIED] / [ASSUMPTION] / [DECISION] / [CONFIRM]**. The final `README.md` of the public repo is written during the event (task T14) from this plan.
+Legend: **[VERIFIED] / [ASSUMPTION] / [DECISION] / [CONFIRM]**. The working-tree `README.md` was updated for T14 on 17 Oct 2026. The repository has not been published; see the verification list and `RESUME.md` §10 for remaining work.
 
 **Rules:** fill each section only from observed reality (what actually runs, what you actually saw). No invented benchmarks, accuracy numbers, user counts, or test results. Use real screenshots only. Replace every `<<FILL>>` marker; none may remain at submission.
 
@@ -64,10 +64,10 @@ Candidate list to confirm against reality at the end:
 | All code written during event | 1 (statement) `<<CONFIRM wording>>` | Commit history |
 
 ## README verification list (tick before T14 is done)
-- [ ] Exact model ID matches the server default and `.env.example`
-- [ ] Call-site file path is correct and the file exists
+- [x] Exact model ID matches the server default and `.env.example`
+- [x] Call-site file path is correct and the file exists
 - [ ] Commands copied from a successful fresh-clone run
-- [ ] Every `<<FILL>>` removed
+- [x] Every `<<FILL>>` removed from the final README
 - [ ] Screenshot(s) real, current, and show no secrets
-- [ ] Limitations are truthful
-- [ ] Licence name matches the `LICENSE` file
+- [x] Limitations are truthful
+- [x] Licence name matches the `LICENSE` file

@@ -22,11 +22,27 @@ export function analyzeRouter({ callModel, config }) {
       for (let attempt = 0; attempt < 2; attempt++) {
         const out = await callModel(attempt === 0 ? user : user + RETRY_NUDGE);
         model = out.model;
-        try { data = parseModelOutput(out.text); break; }
-        catch (e) { if (!(e instanceof AppError) || e.code !== 'BAD_MODEL_OUTPUT' || attempt === 1) throw e; }
+        try {
+          data = parseModelOutput(out.text);
+          break;
+        } catch (e) {
+          if (e instanceof AppError && e.code === 'BAD_MODEL_OUTPUT' && attempt === 0) {
+            console.warn(`[analyze] model output failed schema validation on attempt 1; retrying with format nudge...`);
+            continue;
+          }
+          console.error(`[analyze] schema validation failure: stage=parseModelOutput code=${e?.code || 'UNKNOWN'}`);
+          throw e;
+        }
       }
       res.json({ ok: true, data, meta: { model, latencyMs: Date.now() - started } });
-    } catch (err) { next(err); }
+    } catch (err) {
+      if (err instanceof AppError) {
+        console.error(`[analyze] request failed: stage=analyze_route code=${err.code} status=${err.status}`);
+      } else {
+        console.error(`[analyze] unexpected failure: stage=analyze_route error=${err?.name || 'Error'}`);
+      }
+      next(err);
+    }
   });
 
   return router;
