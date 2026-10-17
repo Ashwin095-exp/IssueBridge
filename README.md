@@ -30,7 +30,7 @@ React + Vite browser --POST /api/analyze--> Express server --> Gemma 4 via Gemin
 
 ## Verification status
 
-- Backend automated tests: **21/21 passed** (`server`: `npm test`, including error distinction and custom issue regression tests).
+- Backend automated tests: **29/29 passed** (`server`: `npm test`, covering route logic, schema validation, error distinction, custom issue regression, and comprehensive CORS checks).
 - Client production build: **passed** (`client`: `npm run build`).
 - Live end-to-end: verified with real model `gemma-4-26b-a4b-it` through `/api/analyze` and the browser UI for both built-in samples and custom GitHub issues. Transient upstream 5xx errors from the hosted provider are handled via automatic backoff retry and clear error reporting.
 - Live error checks: malformed JSON, missing/empty/short input returned HTTP 400 `INVALID_INPUT`; an 8,001-character input returned HTTP 413 `INPUT_TOO_LONG`. A separate process using a dummy invalid credential returned HTTP 500 `SERVER_MISCONFIGURED` without echoing the credential. A 1 ms timeout returned HTTP 504 `UPSTREAM_TIMEOUT`. The rate-limit response is covered by a mocked route test (HTTP 429); no real quota was exhausted to induce it.
@@ -89,7 +89,7 @@ Copy [`server/.env.example`](server/.env.example) to `.env`. The example contain
 | `GEMINI_API_KEY` | Yes | — | Google AI Studio key; server-only, never commit it. |
 | `GEMMA_MODEL` | No | `gemma-4-26b-a4b-it` | Exact Gemma 4 model identifier. |
 | `PORT` | No | `3001` | Express API port. |
-| `CORS_ORIGIN` | No | `http://localhost:5173` | Allowed browser origin. |
+| `CORS_ORIGIN` | No | `http://localhost:5173` (defaults also allow `https://issue-bridge-flfw.vercel.app` & Vercel previews) | Allowed browser origins (comma-separated for multiple; e.g. on Render set `https://issue-bridge-flfw.vercel.app`). |
 | `MAX_INPUT_CHARS` | No | `8000` | Maximum issue text length. |
 | `MODEL_TIMEOUT_MS` | No | `90000` | Per-model-call timeout; increased after a real request exceeded the previous 30-second limit. |
 | `THINKING_LEVEL` | No | `minimal` | Verified Gemma 4 setting. |

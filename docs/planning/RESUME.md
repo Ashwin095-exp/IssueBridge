@@ -59,7 +59,7 @@ Critical path: T01→T02→T03→T04→T05→T06→T07→(T08→T09→T10)→T11
 | T07 `/api/analyze` | Done | Live issue produced valid model data; mocked tests cover malformed output retry, transient 5xx retry, and upstream error mapping |
 | T08-T10 client | Done | `client`: production build passes; Vite proxy serves API calls |
 | T11 integration | Resolved & Verified | Both bundled sample ("README typo") and custom issue ("CLI crash on missing directory") succeed live via real Gemma 4 inference (~15s) with automatic transient 5xx retry |
-| T12 edge cases | Verified | Live and unit regression tests verified; transient 5xx retried; connection errors separated from upstream 5xx errors; 21/21 tests pass |
+| T12 edge cases | Verified | Live and unit regression tests verified; transient 5xx retried; connection errors separated; CORS tests for production Vercel & preview domains added; 30/30 tests pass |
 | T13 polish | Basic styling, light/dark, responsive CSS | Full browser UI verified with screenshot artifact |
 | T14 README | Updated with actual setup, model, test results, limitations | Windows setup, model notes, limitations recorded |
 | T15 publish + fresh clone | Local fresh-clone validation done; publication intentionally not done | Separate clone with current working-tree changes overlaid had no original dependencies/build outputs: `npm ci`, 21/21 server tests, client production build, backend startup/health, and Vite startup/HTTP 200 all passed. Clone `.env` stayed blank and `/analyze` returned expected `SERVER_MISCONFIGURED`. `.env` ignored/untracked; no remote/push/deploy performed |

@@ -1,12 +1,12 @@
 import express from 'express';
-import cors from 'cors';
+import { createCorsMiddleware } from './cors.js';
 import { analyzeRouter } from './routes/analyze.js';
 import { AppError, toEnvelope } from './errors.js';
 
 export function createApp({ callModel, config }) {
   const app = express();
   app.disable('x-powered-by');
-  app.use(cors({ origin: config.corsOrigin }));
+  app.use(createCorsMiddleware(config.corsOrigin));
   // Slightly above max input so validation (not the parser) reports "too long".
   app.use(express.json({ limit: `${Math.ceil((config.maxInputChars * 4 + 2048) / 1024)}kb` }));
   app.use('/api', analyzeRouter({ callModel, config }));

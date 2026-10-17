@@ -103,7 +103,7 @@ The schema is a [DECISION]; the field names are frozen once T05 is done, because
 | `GEMINI_API_KEY` | `server/.env` | Yes | — | From Google AI Studio. Passed explicitly to `GoogleGenAI`; never committed |
 | `GEMMA_MODEL` | `server/.env` | No | `gemma-4-26b-a4b-it` | Verified model; exact ID is printed in README |
 | `PORT` | `server/.env` | No | `3001` | |
-| `CORS_ORIGIN` | `server/.env` | No | `http://localhost:5173` | Add deploy origin if O2 |
+| `CORS_ORIGIN` | `server/.env` | No | `http://localhost:5173` (defaults also include `https://issue-bridge-flfw.vercel.app` & Vercel previews) | Comma-separated allowed origins; on Render set `https://issue-bridge-flfw.vercel.app` |
 | `MAX_INPUT_CHARS` | `server/.env` | No | `8000` | |
 | `MODEL_TIMEOUT_MS` | `server/.env` | No | `90000` | Increased after an actual issue request exceeded the previous 30-second limit |
 | `THINKING_LEVEL` | `server/.env` | No | `minimal` | Verified with the selected model |
@@ -144,14 +144,16 @@ issuebridge/
 │   ├── .env.example          # placeholders only
 │   ├── .env                  # local secrets (git-ignored, never committed)
 │   ├── src/
-│   │   ├── index.js          # Express app: env, CORS, routes, listen
+│   │   ├── index.js          # Express app entry: env, port, listen
+│   │   ├── app.js            # Express createApp factory, middleware pipeline, error handler
+│   │   ├── cors.js           # Production & preview CORS origin resolver and middleware
 │   │   ├── routes/analyze.js # POST /api/analyze + GET /api/health
 │   │   ├── services/gemma.js # Only file that talks to the Gemini API / Gemma 4
 │   │   ├── prompt.js         # System instruction + user-content builder
 │   │   ├── validate.js       # Input validation + model-output parsing/validation
 │   │   └── errors.js         # Error codes → HTTP status + messages
 │   ├── scripts/verify.js     # Live REST/SDK and sample verification
-│   └── tests/                # node --test files for validate/errors/route (mocked model)
+│   └── tests/                # node --test files for validate/errors/route/cors (mocked model)
 └── client/
     ├── package.json
     ├── index.html
